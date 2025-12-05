@@ -1,15 +1,104 @@
 import requests
+from flask import Flask, request, jsonify
+from dataclasses import dataclass, field
 
 
-ICPName = "test"
-Username = "test"
-Password = "test"
-APIURL = "api/v1/authentication/login" + ICPName
+## CONSTANTS
+API_ROOT = "http://in67434072.local/api/v1"
+USERNAME = "AccessOS"
+PASSWORD = "AccessOS"
 
-def get_user(name):
-    pass
 
-UserName = "Installer"
+def getAPIVersion():
+    APIVersion = requests.get(f"{API_ROOT}/../protocol-version")
+    print("Status code:", APIVersion.status_code)
+    print("Body:", APIVersion.text)
 
-get_user(UserName)
 
+def authenticate():
+    login_url = f"{API_ROOT}/authentication/login"
+    login_body = {
+        "Username": USERNAME,
+        "Password": PASSWORD
+    }
+    login_resp = requests.post(login_url, json=login_body, timeout=5)
+    print("Login status:", login_resp.status_code)
+    print("Login body:", login_resp.text)
+
+    data = login_resp.json()
+    session_id = data["UserID"]
+    return session_id
+
+
+
+
+def getAreas(session_id):
+    areas_url = f"{API_ROOT}/control/area"
+    headers = {
+        "Cookie": f"LoginSessId={session_id}"
+    }
+    areas_resp = requests.get(areas_url, headers=headers, timeout=5)
+    print("Areas status:", areas_resp.status_code)
+    print("Areas body:", areas_resp.text)
+
+#getAreas(API_ROOT, authenticate(API_ROOT))
+
+def getAllDoors(session_id):
+    doors_url = f"{API_ROOT}/control/door"
+    headers = {
+        "Cookie": f"LoginSessId={session_id}"
+    }
+    doors_resp = requests.get(doors_url, headers=headers, timeout=5)
+    print("Doors status:", doors_resp.status_code)
+    print("Areas body:", doors_resp.text)
+    return doors_resp.json()
+
+#getAllDoors(authenticate())
+
+def openDoor(session_id, door):
+    url = f"{API_ROOT}/control/door/{door}/activity"
+    headers = {
+        "Cookie": f"LoginSessId={session_id}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "Type": "ControlDoor",
+        "DoorControlType": "Open",
+        "Entity": "{door}"
+    }
+    resp = requests.post(url, headers=headers, json=body, timeout=5)
+    print("Unlock status code:", resp.status_code)
+    print("Unlock response text:", resp.text)
+
+    #resp.raise_for_status()
+    #return resp.json()
+
+def get_door_id_by_name(doors: list[dict], target_name: str) -> str | None:
+    for door in doors:
+        if door.get("Name") == target_name:
+            return door.get("ID")
+    return None
+
+def main():
+    session_id = authenticate()
+    doors = getAllDoors(session_id)
+
+    print("\n--- Doors ---")
+    if not doors:
+        print("No doors returned.")
+        return
+
+    for door in doors:
+        name = door.get("Name")
+        door_id = door.get("ID")
+        reporting_id = door.get("ReportingID")
+        print(f"ReportingID: {reporting_id} | Name: {name} | ID: {door_id}")
+
+    doorname = "Inception Controller - Door 1"
+
+    openDoor(session_id, get_door_id_by_name(doors,doorname))
+    openDoor(session_id, get_door_id_by_name(doors, "Inception Controller - Door 2"))
+
+
+if __name__ == "__main__":
+    main()
