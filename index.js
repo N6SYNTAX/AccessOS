@@ -13,14 +13,40 @@ let ICPSerial;
 let Username;
 let Password;
 
-document.getElementById("ICPSubmit").onclick = function () {
-    ICPSerial = document.getElementById("ICPSerial").value;
-    APIUsername = document.getElementById("APIUsername").value;
-    APIPassword = document.getElementById("APIPassword").value;
+function onLoginSuccess() {
+    document.getElementById("loginPanel").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
 }
 
+document.getElementById("ICPLoginSubmit").onclick = async function () {
+    const ICPSerial = document.getElementById("ICPSerial").value;
+    const APIUsername = document.getElementById("APIUsername").value;
+    const APIPassword = document.getElementById("APIPassword").value;
+
+    let url = "http://localhost:5000/login"
 
 
-if (ICPSerial = 123456) {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            ICPSerial: ICPSerial,
+            Username: APIUsername,
+            Password: APIPassword
+        })
 
-}
+    });
+    const data = await response.json();
+
+    if (data.success) {
+        // Store session
+        sessionStorage.setItem("sessionId", data.UserID);
+        sessionStorage.setItem("ICPSerial", data.ICPSerial)
+        window.location.href = "dashboard.html";
+    } else {
+        showError(data.error);
+    }
+};
+
