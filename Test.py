@@ -25,7 +25,7 @@ def login():
     icpserial = data["ICPSerial"]
     username = data["Username"]
     password = data["Password"]
-    print(username) 
+    print(f"-------------------Attempting login:-----------------------------\nSystem: {icpserial}\nUsername: {username}\n-----------------------------------------------------------------------") 
     login_url = f"http://{icpserial}.local/api/v1/authentication/login"
     login_body = {
         "Username": username,
@@ -39,7 +39,8 @@ def login():
     session_id = data["UserID"]
     return jsonify({
         "success": True,
-        "UserID": session_id
+        "UserID": session_id,
+        "Username": username,
         }), session_id
 
 

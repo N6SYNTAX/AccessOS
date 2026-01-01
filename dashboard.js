@@ -1,10 +1,14 @@
 const sessionId = sessionStorage.getItem("sessionId");
-const ICPSerial = sessionStorage.getItem("ICPSerial")
+const Device = sessionStorage.getItem("ICPSerial");
+const UserID = sessionStorage.getItem("Username")
 
 if (!sessionId) {
-    // Not logged in, go back
+
     window.location.href = "index.html";
 }
+
+
+document.getElementById("loginmsg").textContent = `Welcome, ${UserID}, Device: ${Device}, Session: ${sessionId}`;
 
 document.getElementById("getareasBtn").onclick = async function () {
     const response = await fetch("http://localhost:5000/getAreas", {

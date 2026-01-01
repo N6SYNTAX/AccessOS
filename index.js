@@ -43,7 +43,8 @@ document.getElementById("ICPLoginSubmit").onclick = async function () {
     if (data.success) {
         // Store session
         sessionStorage.setItem("sessionId", data.UserID);
-        sessionStorage.setItem("ICPSerial", data.ICPSerial)
+        sessionStorage.setItem("ICPSerial", ICPSerial)
+        sessionStorage.setItem("Username", APIUsername)
         window.location.href = "dashboard.html";
     } else {
         showError(data.error);
