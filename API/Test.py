@@ -21,6 +21,7 @@ app = Flask(__name__)
 CORS(app)
 @app.route("/login", methods=["POST"])
 def login():
+    
     data = request.json
     icpserial = data["ICPSerial"]
     username = data["Username"]
