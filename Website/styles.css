@@ -1,19 +1,8 @@
-#hero {
-    background-image: url(actech.png);
-    height: 100vh;
-    position: relative;
+@font-face {
+    font-family: 'BebasNeue';
+    src: url(Assets/Fonts/bebas_neue/BebasNeue-Regular.ttf)
 }
 
-#hero::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url(circuit.png);
-    opacity: 0.3;
-}
 
 .nav {
     display: flex;
@@ -29,20 +18,416 @@
     gap: 8px;
     background: rgba(255, 255, 255, 0.9);
     padding: 8px 16px;
-    border-radius: 50px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 140, 255, 0.486);
+    text-align: center;
 }
 
 .pill a {
     text-decoration: none;
     color: #333;
     padding: 8px 16px;
-    border-radius: 25px;
-    font-family: sans-serif;
-    font-size: 14px;
+    border-radius: 5px;
+    font-family: 'BebasNeue';
+    font-size: 20px;
     transition: background 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+
 }
 
 .pill a:hover {
-    background: rgba(0, 0, 0, 0.05);
+    /* background: rgba(0, 110, 255, 0.5); */
+    background-image: url(Assets/Images/Gradient2.png);
+    background-color: rgba(0, 140, 255, 0.486);
+    background-size: cover;
+}
+
+.cta {
+    font-family: 'BebasNeue';
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.cta :hover {}
+
+
+.scroll-container {
+    overflow: hidden;
+    width: 100%;
+}
+
+.scroll-track {
+    display: flex;
+    animation: scroll 30s linear infinite;
+}
+
+.scroll-track img {
+    width: 200px;
+    height: auto;
+    object-fit: contain;
+    margin-right: 60px;
+    flex-shrink: 0;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-1560px);
+    }
+}
+
+.scroll-track:hover {
+    animation-play-state: paused;
+}
+
+
+
+
+/*  */
+
+
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-dark: #0a0c10;
+    --accent: #0080ff;
+    --accent-light: #00b4ff;
+    --text-light: #ffffff;
+    --text-muted: #7a8599;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-light);
+}
+
+/* ========== HERO SECTION ========== */
+
+#hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 80px 10%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Gradient background */
+.hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(0, 128, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(0, 180, 255, 0.08) 0%, transparent 40%);
+    z-index: 0;
+}
+
+/* Grid overlay */
+.hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: 1;
+}
+
+/* Content */
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+}
+
+.hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 18px;
+    background: rgba(0, 128, 255, 0.1);
+    border: 1px solid rgba(0, 128, 255, 0.3);
+    border-radius: 30px;
+    font-size: 0.8rem;
+    color: var(--accent-light);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    animation: fadeUp 0.8s ease-out forwards;
+    opacity: 0;
+}
+
+.hero-tag::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--accent-light);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+#hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 15px;
+    animation: fadeUp 0.8s ease-out 0.2s forwards;
+    opacity: 0;
+}
+
+#hero h1 .highlight {
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+#hero h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    animation: fadeUp 0.8s ease-out 0.4s forwards;
+    opacity: 0;
+}
+
+.hero-description {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 40px;
+    animation: fadeUp 0.8s ease-out 0.5s forwards;
+    opacity: 0;
+}
+
+/* Buttons */
+.hero-buttons {
+    display: flex;
+    gap: 15px;
+    animation: fadeUp 0.8s ease-out 0.6s forwards;
+    opacity: 0;
+}
+
+.btn {
+    padding: 15px 32px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: var(--accent-light);
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(0, 128, 255, 0.3);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-light);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ========== SHIELD VISUAL ========== */
+
+.hero-visual {
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 1s ease-out 0.4s forwards;
+    opacity: 0;
+}
+
+.shield {
+    position: relative;
+    width: 350px;
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shield-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 128, 255, 0.2);
+}
+
+.ring-1 {
+    width: 100%;
+    height: 100%;
+    animation: spin 20s linear infinite;
+    border-style: dashed;
+}
+
+.ring-2 {
+    width: 75%;
+    height: 75%;
+    border-color: rgba(0, 180, 255, 0.3);
+    animation: spin 15s linear infinite reverse;
+}
+
+.ring-3 {
+    width: 50%;
+    height: 50%;
+    background: rgba(0, 128, 255, 0.05);
+    border-color: rgba(0, 128, 255, 0.4);
+    animation: pulse-ring 3s ease-in-out infinite;
+}
+
+.shield-icon {
+    width: 80px;
+    height: 80px;
+    color: var(--accent-light);
+    filter: drop-shadow(0 0 20px rgba(0, 180, 255, 0.5));
+    animation: float 4s ease-in-out infinite;
+}
+
+.shield-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* ========== ANIMATIONS ========== */
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.3);
+    }
+}
+
+@keyframes pulse-ring {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.7;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1024px) {
+    #hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 100px 8% 60px;
+        gap: 50px;
+    }
+
+    .hero-content {
+        max-width: 100%;
+    }
+
+    .hero-buttons {
+        justify-content: center;
+    }
+
+    .shield {
+        width: 280px;
+        height: 280px;
+    }
+}
+
+@media (max-width: 600px) {
+    .hero-buttons {
+        flex-direction: column;
+    }
+
+    .btn {
+        text-align: center;
+    }
+
+    .shield {
+        width: 220px;
+        height: 220px;
+    }
+
+    .shield-icon {
+        width: 60px;
+        height: 60px;
+    }
 }
