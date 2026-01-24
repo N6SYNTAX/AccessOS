@@ -16,10 +16,16 @@ document.getElementById("getareasBtn").onclick = async function () {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             session_id: sessionId,
-            icpserial: ICPSerial
+            icpserial: Device
         })
     });
 
     const data = await response.json();
     console.log(data);
+    if (data.success) {
+
+        sessionStorage.setItem("";
+    } else {
+        showError(data.error);
+    }
 };

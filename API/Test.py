@@ -58,6 +58,8 @@ def getAreas():
     areas_resp = requests.get(areas_url, headers=headers, timeout=5)
     print("Areas status:", areas_resp.status_code)
     print("Areas body:", areas_resp.text)
+    return jsonify(areas_resp.json())
+
 
 #getAreas(API_ROOT, authenticate(API_ROOT))
 
