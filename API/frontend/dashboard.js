@@ -20,12 +20,6 @@ document.getElementById("getareasBtn").onclick = async function () {
         })
     });
 
-    const data = await response.json();
-    console.log(data);
-    if (data.success) {
-
-        sessionStorage.setItem("";
-    } else {
-        showError(data.error);
-    }
+    const areas = await response.json();
+    console.log(areas);
 };
