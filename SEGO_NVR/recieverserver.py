@@ -1,0 +1,521 @@
+# receiver_server.py
+# UNV LAPI event receiver (Alarm + PersonInfo) with robust JSON parsing + image extraction
+#
+# Run:
+#   python receiver_server.py --host 0.0.0.0 --port 9000 --outdir ./unv_events
+#
+# Notes:
+# - Configure your NVR subscription callback URL to:
+#     http://<PC_IP>:9000/LAPI/V1.0/System/Event/Notification/Alarm
+#     http://<PC_IP>:9000/LAPI/V1.0/System/Event/Notification/PersonInfo
+#
+# - This server will save all incoming events to disk, and will attempt to decode base64 JPEGs
+#   found anywhere in the JSON (e.g., PersonInfo.ImageList[].Data, SnapshotImage, etc.)
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import re
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+from urllib.parse import parse_qs
+
+from flask import Flask, request, Response
+
+JsonType = Union[dict, list, str, int, float, bool, None]
+
+app = Flask(__name__)
+
+# Correlation store: RelatedID -> alarm summary (in-memory)
+_alarm_lock = threading.Lock()
+_alarm_by_related_id: Dict[str, Dict[str, Any]] = {}
+_alarm_ttl_seconds = 300  # keep 5 minutes of alarms
+
+# Event counter for filenames
+_counter_lock = threading.Lock()
+_event_counter = 0
+
+# Output
+OUTDIR = Path("./unv_events").resolve()
+
+
+def iso_now() -> str:
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+
+
+def epoch_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def ensure_outdir() -> None:
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+
+
+def init_counter_from_disk() -> None:
+    """Initialize _event_counter from existing files so numbering continues across restarts."""
+    global _event_counter
+    ensure_outdir()
+    # Try to find files like *_evt00012_*.json and pick max 12
+    max_n = 0
+    rx = re.compile(r"_evt(\d{5})_")
+    for p in OUTDIR.glob("*_evt*_*.json"):
+        m = rx.search(p.name)
+        if m:
+            try:
+                n = int(m.group(1))
+                max_n = max(max_n, n)
+            except ValueError:
+                pass
+    _event_counter = max_n
+
+
+def next_event_number() -> int:
+    global _event_counter
+    with _counter_lock:
+        _event_counter += 1
+        return _event_counter
+
+
+def safe_headers() -> Dict[str, str]:
+    # Keep headers that help debugging, avoid logging secrets if any appear.
+    keep = {}
+    for k, v in request.headers.items():
+        lk = k.lower()
+        if lk in ("content-type", "content-length", "user-agent", "host", "connection"):
+            keep[k] = v
+    return keep
+
+
+def try_parse_json_from_text(text: str) -> Optional[JsonType]:
+    """Try parsing JSON from text directly, or from an extracted {...} substring."""
+    text = text.strip()
+    if not text:
+        return None
+
+    # Direct parse
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+
+    # If body is urlencoded like "data={...}" or similar, try to parse params
+    if "=" in text and ("&" in text or text.count("=") >= 1):
+        try:
+            qs = parse_qs(text, keep_blank_values=True)
+            # try each value that looks like JSON
+            for _, vals in qs.items():
+                for val in vals:
+                    val = val.strip()
+                    if val.startswith("{") and val.endswith("}"):
+                        try:
+                            return json.loads(val)
+                        except Exception:
+                            continue
+        except Exception:
+            pass
+
+    # Extract first JSON object substring
+    first = text.find("{")
+    last = text.rfind("}")
+    if 0 <= first < last:
+        candidate = text[first:last + 1]
+        try:
+            return json.loads(candidate)
+        except Exception:
+            return None
+
+    return None
+
+
+def parse_body() -> Tuple[Optional[JsonType], Dict[str, Any]]:
+    """
+    Returns (parsed_json_or_none, meta)
+    meta includes parse_status and raw_length.
+    """
+    raw = request.get_data(cache=False, as_text=False) or b""
+    meta: Dict[str, Any] = {
+        "content_type": request.headers.get("Content-Type", ""),
+        "raw_length": len(raw),
+        "parse_status": "unknown",
+    }
+
+    # Fast path if Flask thinks it's JSON
+    try:
+        j = request.get_json(silent=True)
+        if j is not None:
+            meta["parse_status"] = "ok(request.get_json)"
+            return j, meta
+    except Exception:
+        pass
+
+    # Decode raw to text (best effort)
+    try:
+        text = raw.decode("utf-8", errors="replace")
+    except Exception:
+        text = ""
+
+    j2 = try_parse_json_from_text(text)
+    if j2 is not None:
+        meta["parse_status"] = "ok(manual)"
+        return j2, meta
+
+    meta["parse_status"] = "failed"
+    return None, meta
+
+
+def save_event_file(prefix: str, payload: Dict[str, Any]) -> Path:
+    ensure_outdir()
+    n = next_event_number()
+    ts = epoch_ms()
+    fname = f"{ts}_evt{n:05d}_{prefix}.json"
+    p = OUTDIR / fname
+    p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return p
+
+
+def looks_like_base64(s: str) -> bool:
+    if not isinstance(s, str):
+        return False
+    s2 = s.strip()
+    if len(s2) < 200:
+        return False
+    # base64 usually only these chars (plus newlines)
+    if re.fullmatch(r"[A-Za-z0-9+/=\s]+", s2) is None:
+        return False
+    return True
+
+
+def decode_base64_image(b64: str) -> Optional[bytes]:
+    if not isinstance(b64, str):
+        return None
+    b64 = b64.strip()
+
+    # Remove data URL prefix if present
+    if b64.lower().startswith("data:image"):
+        comma = b64.find(",")
+        if comma >= 0:
+            b64 = b64[comma + 1 :].strip()
+
+    # Remove whitespace/newlines
+    b64 = re.sub(r"\s+", "", b64)
+
+    try:
+        data = base64.b64decode(b64, validate=False)
+    except Exception:
+        return None
+
+    # Heuristic: JPEG magic bytes
+    if len(data) >= 4 and data[0] == 0xFF and data[1] == 0xD8 and data[-2] == 0xFF and data[-1] == 0xD9:
+        return data
+
+    # Some devices send raw JPEG without perfect ending; still accept if starts with JPEG header
+    if len(data) >= 2 and data[0] == 0xFF and data[1] == 0xD8:
+        return data
+
+    return None
+
+
+def find_all_base64_strings(obj: Any, max_found: int = 10) -> List[Tuple[str, str]]:
+    """
+    Recursively scan obj for base64-like strings.
+    Returns list of (path, value).
+    """
+    found: List[Tuple[str, str]] = []
+
+    def walk(x: Any, path: str) -> None:
+        if len(found) >= max_found:
+            return
+        if isinstance(x, dict):
+            for k, v in x.items():
+                walk(v, f"{path}.{k}" if path else str(k))
+        elif isinstance(x, list):
+            for i, v in enumerate(x):
+                walk(v, f"{path}[{i}]")
+        elif isinstance(x, str):
+            if looks_like_base64(x):
+                found.append((path, x))
+
+    walk(obj, "")
+    return found
+
+
+def deep_find_first_key(obj: Any, key: str) -> Optional[Any]:
+    """Find the first occurrence of a key in nested dicts/lists and return its value."""
+    if isinstance(obj, dict):
+        if key in obj:
+            return obj[key]
+        for v in obj.values():
+            r = deep_find_first_key(v, key)
+            if r is not None:
+                return r
+    elif isinstance(obj, list):
+        for v in obj:
+            r = deep_find_first_key(v, key)
+            if r is not None:
+                return r
+    return None
+
+
+def prune_old_alarms() -> None:
+    now = time.time()
+    with _alarm_lock:
+        dead = [rid for rid, v in _alarm_by_related_id.items() if (now - v.get("_seen_at", now)) > _alarm_ttl_seconds]
+        for rid in dead:
+            _alarm_by_related_id.pop(rid, None)
+
+
+def extract_alarm_summary(j: Any) -> Dict[str, Any]:
+    """
+    Expected shape (example):
+      {"Reference": "...", "AlarmInfo": {"AlarmType":"FaceMatchAlarm","AlarmSrcID":2,"RelatedID":"C..."}}
+    """
+    out: Dict[str, Any] = {}
+    if not isinstance(j, dict):
+        return out
+
+    out["Reference"] = j.get("Reference")
+    alarm_info = j.get("AlarmInfo") if isinstance(j.get("AlarmInfo"), dict) else {}
+    out["AlarmType"] = alarm_info.get("AlarmType")
+    out["AlarmSrcType"] = alarm_info.get("AlarmSrcType")
+    out["AlarmSrcID"] = alarm_info.get("AlarmSrcID")
+    out["TimeStamp"] = alarm_info.get("TimeStamp")
+    out["RelatedID"] = alarm_info.get("RelatedID")
+    return out
+
+
+def extract_personinfo_summary(j: Any) -> Dict[str, Any]:
+    """
+    Expected shape (example):
+      {"Reference":"...","PersonEventInfo":{"FaceInfoList":[{"RelatedID":"C...","CompareInfo":{"Similarity":83,"PersonInfo":{...}, ...}}]}}}
+    """
+    out: Dict[str, Any] = {}
+    if not isinstance(j, dict):
+        return out
+
+    out["Reference"] = j.get("Reference")
+    pei = j.get("PersonEventInfo") if isinstance(j.get("PersonEventInfo"), dict) else {}
+    out["EventID"] = pei.get("ID")
+    out["Timestamp"] = pei.get("Timestamp")
+    out["NotificationType"] = pei.get("NotificationType")
+    out["FaceInfoNum"] = pei.get("FaceInfoNum")
+
+    face_list = pei.get("FaceInfoList") if isinstance(pei.get("FaceInfoList"), list) else []
+    if face_list:
+        f0 = face_list[0] if isinstance(face_list[0], dict) else {}
+        out["RecordID"] = f0.get("RecordID")
+        out["RelatedID"] = f0.get("RelatedID")
+        out["PassingTime"] = f0.get("PassingTime")
+        out["ChannelName"] = f0.get("ChannelName")
+        out["ChannelID"] = f0.get("ChannelID")
+
+        compare = f0.get("CompareInfo") if isinstance(f0.get("CompareInfo"), dict) else {}
+        out["Similarity"] = compare.get("Similarity")
+
+        person = compare.get("PersonInfo") if isinstance(compare.get("PersonInfo"), dict) else {}
+        out["PersonID"] = person.get("PersonID")
+        out["PersonName"] = person.get("PersonName")
+        out["Gender"] = person.get("Gender")
+        out["Birthday"] = person.get("Birthday")
+
+    return out
+
+
+def save_images_for_event(prefix: str, event_path: Path, parsed: Any) -> List[Path]:
+    """
+    Find base64 strings, try decode JPEG, save beside event json.
+    """
+    saved: List[Path] = []
+    candidates = find_all_base64_strings(parsed, max_found=20)
+
+    if not candidates:
+        return saved
+
+    base = event_path.with_suffix("")  # remove .json
+    img_idx = 0
+    for path, b64 in candidates:
+        data = decode_base64_image(b64)
+        if not data:
+            continue
+        img_idx += 1
+        img_path = Path(str(base) + f"_{prefix}_img{img_idx:02d}.jpg")
+        try:
+            img_path.write_bytes(data)
+            saved.append(img_path)
+        except Exception:
+            continue
+
+    return saved
+
+
+def log_line(msg: str) -> None:
+    print(msg, flush=True)
+
+
+@app.route("/health", methods=["GET"])
+def health() -> Response:
+    return Response("ok", status=200, mimetype="text/plain")
+
+
+@app.route("/LAPI/V1.0/System/Event/Notification/Alarm", methods=["POST"])
+def notif_alarm() -> Response:
+    prune_old_alarms()
+
+    parsed, meta = parse_body()
+    client = request.remote_addr
+    when = iso_now()
+
+    wrapper: Dict[str, Any] = {
+        "_received_at": when,
+        "_client": client,
+        "_path": request.path,
+        "_headers": safe_headers(),
+        "_meta": meta,
+    }
+
+    if parsed is None:
+        # store raw (text) for analysis
+        raw_text = request.get_data(cache=False, as_text=True) or ""
+        wrapper["_raw"] = raw_text
+        p = save_event_file("Alarm", wrapper)
+        log_line(f"\n[{when}] Alarm EVENT (UNPARSEABLE) saved: {p.name} bytes={meta.get('raw_length')}")
+        return Response("OK", status=200)
+
+    wrapper["payload"] = parsed
+    p = save_event_file("Alarm", wrapper)
+
+    summary = extract_alarm_summary(parsed)
+    rid = summary.get("RelatedID")
+    if rid:
+        with _alarm_lock:
+            _alarm_by_related_id[rid] = {"_seen_at": time.time(), **summary}
+
+    log_line(f"\n[{when}] EVENT Alarm saved: {p.name}")
+    log_line(f"  From: {client}  AlarmType={summary.get('AlarmType')} AlarmSrcID={summary.get('AlarmSrcID')} RelatedID={rid}")
+
+    return Response("OK", status=200)
+
+
+@app.route("/LAPI/V1.0/System/Event/Notification/PersonInfo", methods=["POST"])
+def notif_personinfo() -> Response:
+    prune_old_alarms()
+
+    parsed, meta = parse_body()
+    client = request.remote_addr
+    when = iso_now()
+
+    wrapper: Dict[str, Any] = {
+        "_received_at": when,
+        "_client": client,
+        "_path": request.path,
+        "_headers": safe_headers(),
+        "_meta": meta,
+    }
+
+    if parsed is None:
+        raw_text = request.get_data(cache=False, as_text=True) or ""
+        wrapper["_raw"] = raw_text
+        p = save_event_file("PersonInfo", wrapper)
+        log_line(f"\n[{when}] PersonInfo EVENT (UNPARSEABLE) saved: {p.name} bytes={meta.get('raw_length')}")
+        return Response("OK", status=200)
+
+    wrapper["payload"] = parsed
+    p = save_event_file("PersonInfo", wrapper)
+
+    # Extract summary in a way that matches your observed structure
+    summary = extract_personinfo_summary(parsed)
+
+    # Fallback: if structure differs, try to find keys anywhere
+    if not summary.get("RelatedID"):
+        summary["RelatedID"] = deep_find_first_key(parsed, "RelatedID")
+    if summary.get("Similarity") is None:
+        summary["Similarity"] = deep_find_first_key(parsed, "Similarity")
+    if not summary.get("PersonName"):
+        pi = deep_find_first_key(parsed, "PersonInfo")
+        if isinstance(pi, dict):
+            summary["PersonName"] = pi.get("PersonName")
+            summary["PersonID"] = pi.get("PersonID")
+
+    rid = summary.get("RelatedID")
+
+    # Correlate with Alarm (if we have it)
+    alarm_match: Optional[Dict[str, Any]] = None
+    if isinstance(rid, str) and rid:
+        with _alarm_lock:
+            alarm_match = _alarm_by_related_id.get(rid)
+
+    # Save images (if any)
+    saved_imgs = save_images_for_event("PersonInfo", p, parsed)
+
+    log_line(f"\n[{when}] EVENT PersonInfo saved: {p.name}")
+    log_line(f"  From: {client}  RelatedID={rid} Similarity={summary.get('Similarity')} Person={summary.get('PersonName')} (ID={summary.get('PersonID')})")
+    if alarm_match:
+        log_line(f"  Correlated Alarm: AlarmType={alarm_match.get('AlarmType')} AlarmSrcID={alarm_match.get('AlarmSrcID')}")
+    else:
+        log_line("  Correlated Alarm: (none found in last few minutes)")
+
+    if saved_imgs:
+        log_line(f"  Saved images: {len(saved_imgs)}")
+        for sp in saved_imgs[:5]:
+            log_line(f"    - {sp.name}")
+        if len(saved_imgs) > 5:
+            log_line("    - ...")
+
+    return Response("OK", status=200)
+
+
+@app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/<path:path>", methods=["GET", "POST"])
+def catch_all(path: str) -> Response:
+    # Helpful when the NVR hits a different endpoint than expected.
+    if request.method == "GET":
+        return Response("UNV receiver running", status=200, mimetype="text/plain")
+
+    parsed, meta = parse_body()
+    client = request.remote_addr
+    when = iso_now()
+
+    wrapper: Dict[str, Any] = {
+        "_received_at": when,
+        "_client": client,
+        "_path": request.path,
+        "_headers": safe_headers(),
+        "_meta": meta,
+    }
+
+    if parsed is None:
+        wrapper["_raw"] = request.get_data(cache=False, as_text=True) or ""
+    else:
+        wrapper["payload"] = parsed
+
+    p = save_event_file("Unknown", wrapper)
+    log_line(f"\n[{when}] EVENT Unknown saved: {p.name} path={request.path}")
+
+    return Response("OK", status=200)
+
+
+def main() -> None:
+    global OUTDIR
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=9000)
+    parser.add_argument("--outdir", default=str(OUTDIR))
+    args = parser.parse_args()
+
+    OUTDIR = Path(args.outdir).resolve()
+    ensure_outdir()
+    init_counter_from_disk()
+
+    print(f"Listening on {args.host}:{args.port} ... (Ctrl+C to stop)")
+    print(f"Output dir: {OUTDIR}")
+    # threaded=True so Alarm + PersonInfo can arrive back-to-back
+    app.run(host=args.host, port=args.port, threaded=True)
+
+
+if __name__ == "__main__":
+    main()

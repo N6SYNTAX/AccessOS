@@ -1,0 +1,10 @@
+{
+  "Reference": "192.168.1.105:80/210235XP4M3257000029/Subscription/Subscribers/9",
+  "AlarmInfo": {
+    "AlarmType": "FaceMatchAlarm",
+    "TimeStamp": 1771756303,
+    "AlarmSrcType": 8,
+    "AlarmSrcID": 2,
+    "RelatedID": "C17717563032127"
+  }
+}

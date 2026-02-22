@@ -1,0 +1,82 @@
+{
+  "Reference": "192.168.1.105:80/210235XP4M3257000029/Subscription/Subscribers/9",
+  "DeviceID": "",
+  "PersonEventInfo": {
+    "ID": 9,
+    "Timestamp": 1771757336,
+    "NotificationType": 0,
+    "FaceInfoNum": 1,
+    "FaceInfoList": [
+      {
+        "RecordID": 2137,
+        "Type": 1,
+        "RelatedID": "C17717573362137",
+        "PassingTime": 1771757336,
+        "ChannelName": "Test",
+        "ChannelID": 2,
+        "CompareInfo": {
+          "Similarity": 82,
+          "PersonInfo": {
+            "PersonID": 2005,
+            "LastChange": 1771233566,
+            "Gender": 1,
+            "Birthday": "20260216",
+            "PersonName": "Sean Kelly",
+            "Region": {
+              "Nation": "Aryean",
+              "Province": "Victoria",
+              "City": "Melbourne"
+            },
+            "IdentificationNum": 1,
+            "IdentificationList": [
+              {
+                "Type": 0,
+                "Number": "12345678"
+              }
+            ],
+            "ImageNum": 1,
+            "ImageList": [
+              {
+                "FaceID": 0,
+                "Type": 1,
+                "Name": "Pic_1771237165059.jpg",
+                "Data": "<redacted string length=22860>",
+                "Size": 22864
+              }
+            ],
+            "BelongLibNum": 1,
+            "BelongLibIDList": [
+              1
+            ],
+            "LibID": 1
+          },
+          "SnapshotImage": {
+            "BigImage": {
+              "Size": 770340,
+              "Data": "<redacted string length=770336>",
+              "Type": 1
+            },
+            "SmallImage": {
+              "Size": 601992,
+              "Data": "<redacted string length=601988>",
+              "Type": 1
+            },
+            "Area": {
+              "left": 2326,
+              "top": 599,
+              "right": 7335,
+              "bottom": 9999
+            }
+          },
+          "FaceAttr": {
+            "MaskFlag": 0,
+            "Temperature": 0,
+            "Gender": 1,
+            "AgeRange": 3,
+            "GlassFlag": 1
+          }
+        }
+      }
+    ]
+  }
+}

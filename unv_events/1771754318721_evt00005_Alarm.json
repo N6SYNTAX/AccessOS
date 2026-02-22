@@ -1,0 +1,25 @@
+{
+  "_received_at": "2026-02-22T20:58:38+11:00",
+  "_client": "192.168.1.105",
+  "_path": "/LAPI/V1.0/System/Event/Notification/Alarm",
+  "_headers": {
+    "Host": "192.168.1.50:9000",
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": "238"
+  },
+  "_meta": {
+    "content_type": "application/json; charset=utf-8",
+    "raw_length": 238,
+    "parse_status": "ok(manual)"
+  },
+  "payload": {
+    "Reference": "192.168.1.105:80/210235XP4M3257000029/Subscription/Subscribers/14",
+    "AlarmInfo": {
+      "AlarmType": "FaceMatchAlarm",
+      "TimeStamp": 1771757912,
+      "AlarmSrcType": 8,
+      "AlarmSrcID": 2,
+      "RelatedID": "C17717579122139"
+    }
+  }
+}
