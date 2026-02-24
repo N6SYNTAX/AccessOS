@@ -1,0 +1,103 @@
+.service {
+    padding: 60px 100px;
+    background: #0b0f14;
+}
+
+
+
+.service-left {
+    flex: 1.2;
+    color: #fff;
+    margin-right: 800px;
+}
+
+.service-left h2 {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.service-left p {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.service-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.service-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 18px 18px;
+    color: #fff;
+}
+
+.service-card h3 {
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+
+/* Base box */
+.hover-gradient-box {
+    position: relative;
+    border-radius: 24px;
+    padding: 32px;
+    background: #0b0f14;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 60px var(--brand-gradient);
+    overflow: hidden;
+    display: flex;
+
+    transition: transform .2s ease, border-color .2s ease;
+}
+
+/* The gradient layer (hidden until hover) */
+.hover-gradient-box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--brand-gradient);
+    /* your gradient */
+    opacity: 0;
+    transition: opacity .25s ease;
+    z-index: 0;
+}
+
+/* Optional: keep content readable (adds dark tint over gradient) */
+.hover-gradient-box::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transition: opacity .25s ease;
+    z-index: 1;
+}
+
+/* Bring content above the overlays */
+.hover-gradient-box>* {
+    position: relative;
+    z-index: 2;
+}
+
+/* Hover state */
+.hover-gradient-box:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 230, 255, 0.35);
+}
+
+.hover-gradient-box:hover::before {
+    opacity: 1;
+    /* show gradient */
+}
+
+.hover-gradient-box:hover::after {
+    opacity: 1;
+    /* keep text readable on bright gradient */
+}

@@ -1,0 +1,134 @@
+:root {
+    /* ===== Brand gradient (from your image) ===== */
+    --g-top: #29c7fa;
+    --g-mid1: #25b8ea;
+    --g-mid2: #1e98c7;
+    --g-mid3: #136993;
+    --g-mid4: #08395f;
+    --g-bot: #022044;
+
+    /* One “official” gradient you can reuse */
+    --brand-gradient: linear-gradient(180deg, var(--g-top) 0%, var(--g-bot) 100%);
+
+    /* ===== Neutrals (dark UI) ===== */
+    --bg: #0b0f14;
+    /* page background */
+    --surface: #0f1722;
+    /* cards/panels */
+    --surface-2: #0b1220;
+    /* deeper panels */
+    --border: rgba(41, 199, 250, 0.22);
+
+    /* ===== Text ===== */
+    --text-1: rgba(255, 255, 255, 0.92);
+    --text-2: rgba(255, 255, 255, 0.72);
+    --text-3: rgba(255, 255, 255, 0.55);
+
+    /* ===== Accent usage ===== */
+    --accent: var(--g-top);
+    --accent-2: var(--g-mid2);
+
+    /* ===== Fonts ===== */
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-heading: "Sora", var(--font-body);
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+
+@font-face {
+    font-family: "Sora";
+    src: url("../Assets/Fonts/Sora-Medium.ttf");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+@font-face {
+    font-family: 'BebasNeue';
+    src: url(Assets/Fonts/bebas_neue/BebasNeue-Regular.ttf);
+
+}
+
+@font-face {
+    font-family: 'Workbench';
+    src: url(Assets/Fonts/Workbench-Regular-VariableFont_BLED\,SCAN.ttf);
+
+}
+
+
+
+@font-face {
+    font-family: 'Ethnocentric';
+    src: url(Assets/Fonts/Ethnocentric-Regular.otf)
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow-x: hidden;
+    background-color: var(--bg-colour);
+
+}
+
+/* For the main page scrollbar */
+html {
+    /* For Firefox */
+    scrollbar-width: none;
+    /* For Internet Explorer and Edge (legacy) */
+    -ms-overflow-style: none;
+}
+
+/* For Chrome, Safari, Opera, and new Edge (Webkit browsers) */
+html::-webkit-scrollbar {
+    display: none;
+}
+
+
+html {
+    color-scheme: dark;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.5;
+}
+
+/* Headings default */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading);
+    color: var(--text-1);
+}
+
+/* Paragraph / secondary text default */
+p,
+li,
+small {
+    color: var(--text-2);
+}
+
+/* Links */
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Optional: consistent selection highlight */
+::selection {
+    background: rgba(41, 199, 250, 0.28);
+}

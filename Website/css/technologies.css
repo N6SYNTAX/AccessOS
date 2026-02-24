@@ -1,0 +1,82 @@
+/* ==============
+Technologies
+================= */
+
+/* Section styling */
+#technologies {
+    padding: 60px 20px;
+    background-color: var(--bg);
+    /* clean neutral background */
+    text-align: center;
+    ;
+}
+
+#technologies .section-title {
+    margin-bottom: 40px;
+    color: #cccccc;
+    font-family: var(--font-heading);
+    font-size: 40px;
+    overflow: hidden;
+}
+
+/* Scroll container */
+.scroll-container {
+    overflow: hidden;
+    /* hide scrollbar */
+    position: relative;
+    width: 100%;
+}
+
+/* Track for scrolling logos */
+.scroll-track {
+    display: flex;
+    gap: 60px;
+    /* spacing between logos */
+    align-items: center;
+    animation: scroll-logos 20s linear infinite;
+}
+
+/* Logos */
+.scroll-track img {
+    max-height: 60px;
+    object-fit: contain;
+    filter: grayscale(20%);
+    transition: transform 0.3s, filter 0.3s;
+}
+
+.scroll-track img:hover {
+    transform: scale(1.1);
+    filter: grayscale(0%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .scroll-track {
+        gap: 40px;
+    }
+
+    .scroll-track img {
+        max-height: 50px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-track {
+        gap: 20px;
+    }
+
+    .scroll-track img {
+        max-height: 40px;
+    }
+}
+
+/* Animation for infinite scroll */
+@keyframes scroll-logos {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}

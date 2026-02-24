@@ -1,0 +1,89 @@
+/* ===================================
+   Nav Bar
+   =================================== */
+.nav {
+    align-items: center;
+    padding: 20px 5%;
+    position: fixed;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+
+}
+
+.glasscontainer {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.37),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 5%;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+.logo img {
+    width: 150px;
+}
+
+/* .pill {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 16px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 140, 255, 0.486);
+    text-align: center;
+} */
+
+.pill a {
+    text-decoration: none;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-family: var(--font-heading);
+    font-size: 20px;
+    transition: background 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+
+}
+
+.pill a:hover {
+    background: rgba(0, 110, 255, 0.5);
+    background-image: url(Assets/Images/Gradient2.png);
+    background-color: rgba(0, 140, 255, 0.486);
+    background-size: cover;
+}
+
+.cta {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #0066ff, #00d4ff);
+    padding: 12px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+}
+
+.cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 102, 255, 0.5);
+}
