@@ -3,7 +3,7 @@
    ========================= */
 .featured-work {
     padding: 70px 5%;
-    background: #0b0f14;
+
     color: rgba(255, 255, 255, 0.92);
 }
 
@@ -37,6 +37,7 @@
 
 .featured-all:hover {
     color: rgba(255, 255, 255, 0.85);
+
     background: rgba(255, 255, 255, 0.06);
 }
 

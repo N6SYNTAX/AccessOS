@@ -19,6 +19,9 @@
     /* deeper panels */
     --border: rgba(41, 199, 250, 0.22);
 
+    --bglight: #feffef;
+
+
     /* ===== Text ===== */
     --text-1: rgba(255, 255, 255, 0.92);
     --text-2: rgba(255, 255, 255, 0.72);
@@ -71,7 +74,7 @@
 
 body {
     overflow-x: hidden;
-    background-color: var(--bg-colour);
+    background-color: var(--bglight);
 
 }
 
@@ -95,7 +98,7 @@ html {
 
 body {
     font-family: var(--font-body);
-    background: var(--bg);
+    background: var(--bglight);
     color: var(--text-1);
     line-height: 1.5;
 }
@@ -131,4 +134,10 @@ a:hover {
 /* Optional: consistent selection highlight */
 ::selection {
     background: rgba(41, 199, 250, 0.28);
+}
+
+.mid {
+    background-image: url("../Assets/Images/tplines.svg"), url("../Assets/Images/tplinesleft.png");
+    background-position: top;
+    background-repeat: no-repeat;
 }

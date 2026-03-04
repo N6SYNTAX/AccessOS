@@ -48,5 +48,9 @@ class UNVClient:
 
     def get_device_info(self):
         endpoint = "System/DeviceInfo"
-        return self.sendrq(endpoint, method="GET")
+        return self.sendrq(endpoint, payload="", method="GET")
 
+
+client = UNVClient(nvr_ip, username, password)
+client.subscribe(client_ip,client_port)
+client.get_device_info()
